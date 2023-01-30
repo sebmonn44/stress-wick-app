@@ -1,12 +1,21 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { QueryClient, QueryClientProvider, useQuery } from "react-query";
+import MyTrain from './MyTrain';
+
+
+const queryClient = new QueryClient();
+
 
 export default function App() {
+
   return (
+    <QueryClientProvider client={queryClient}>
     <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
+      <MyTrain />
       <StatusBar style="auto" />
     </View>
+    </QueryClientProvider>
   );
 }
 
