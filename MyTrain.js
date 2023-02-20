@@ -57,12 +57,11 @@ const MyTrain = () => {
           {bla.map((direction) => (
             <View>
               <Text>{`${direction}`}</Text>
-
               <Text>
                 {trains[direction].map((train) => train.destinationName)}
               </Text>
               <Text>
-                {trains[direction].map((train) => train.timeToStation)}
+                {trains[direction].map((train) => train.expectedArrival)}
               </Text>
             </View>
           ))}
