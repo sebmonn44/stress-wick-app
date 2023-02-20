@@ -1,79 +1,115 @@
-import React from "react";
-import {Text, View} from 'react-native'
-import {  useQuery } from "react-query";
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  SafeAreaView,
+  ScrollView,
+  RefreshControl,
+  StyleSheet,
+} from "react-native";
+import { Time } from "./Time";
+import { RenderExpectedTime } from "./RenderExpectedTime";
+import { useQuery } from "react-query";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Text } from "@ui-kitten/components";
+
 const fetchTrains = async () => {
-const result = await fetch('http://192.168.1.106:3000/trains')
-  return result.json()
-}
-
-const Time = ({train}) => {
-  const utcToEpoch = Math.floor(new Date(train.expectedArrival) / 1000)
-  const now = Math.floor(Date.now()/1000)
-  const etaInMinutes = (utcToEpoch-now)/60
-  return (
-    <Text>{etaInMinutes}</Text>
-  )
-}
-
-const RenderExpectedTime = ({data}) => {
- 
-  if(!data) {
-    return (
-      <View>
-        <Text>loading ...</Text>
-      </View>
-    )
-  }
-
-  return (
-    <View>
-      <Time train={data[0]} />
-    </View>
-    
-  )
-}
-
-
-
-
-
-//method from utc to epoch in js
-
-
+  const result = await fetch("http://localhost:3000/trains");
+  return result.json();
+};
+const groupByKey = (list, key, { omitKey = false }) =>
+  list.reduce(
+    (hash, { [key]: value, ...rest }) => ({
+      ...hash,
+      [value]: (hash[value] || []).concat(
+        omitKey ? { ...rest } : { [key]: value, ...rest }
+      ),
+    }),
+    {}
+  );
+const cleanUpDestination = (destination) => {
+  return destination.replace(/Rail Station/g, "").replace(/ *\([^)]*\) */g, "");
+};
 const MyTrain = () => {
-
-  const result = useQuery({ queryKey: ['trains'], queryFn: fetchTrains })
-  
-  if(!result.data){
-    return null
+  const result = useQuery({ queryKey: ["trains"], queryFn: fetchTrains });
+  const [sortedTrains, setSortedTrains] = useState({});
+  if (!result.data) {
+    return null;
   }
-  const inboundTrains = result.data?.filter(train => train.direction === 'inbound' )
-  const outboundTrains = result.data?.filter(train => train.direction === 'outbound' ) 
-  const finalDestinationInbound = inboundTrains[0].destinationName
-  const finalDestinationOutbound = outboundTrains[0].destinationName
-  const platformInbound = inboundTrains[0].platformName
-  const platformIOutbound = outboundTrains[0].platformName
+
+  const stuff = result.data?.map((train) => train.direction);
+  const bla = [...new Set(stuff)];
+
+  console.log(bla);
+  const trains = groupByKey(result.data, "direction", { omitKey: false });
 
   return (
-    <View>
-     <Text>My next train at Hackney wick is at: </Text>
-     <RenderExpectedTime data={inboundTrains} />
-     <Text>{platformInbound}</Text>
-     <Text>----------</Text>
-     <Text>my train will finish at:</Text>
-     <Text>{finalDestinationInbound}</Text>
-     <Text>----------</Text>
-     <Text>My next train at Hackney wick is at: </Text>
-     <RenderExpectedTime data={outboundTrains} />
-     <Text>{platformIOutbound}</Text>
-     <Text>----------</Text>
-     <Text>my train will finish at:</Text>
-     <Text>{finalDestinationOutbound}</Text>
+    <SafeAreaView style={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.scrollView}
+        refreshControl={
+          <RefreshControl
+            refreshing={result.isLoading}
+            onRefresh={result.refetch}
+          />
+        }
+      >
+        <View>
+          {bla.map((direction) => (
+            <View>
+              <Text>{`${direction}`}</Text>
+              <Text>
+                {trains[direction].map((train) => train.destinationName)}
+              </Text>
+              <Text>
+                {trains[direction].map((train) => train.expectedArrival)}
+              </Text>
+            </View>
+          ))}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+};
 
-    </View>
-  )
-  
-}
+const styles = StyleSheet.create({
+  container: {
+    display: "flex",
+    flexDirection: "row",
+    paddingBottom: 100,
+    justifyContent: "",
+  },
+  left: {
+    width: 150,
+    height: 50,
+    fontSize: 20,
+    textAlign: "center",
+  },
+  right: {
+    width: 150,
+    height: 50,
+    fontSize: 20,
+    textAlign: "center",
+  },
+  down: {
+    width: 150,
+    height: 50,
+    fontSize: 20,
+    textAlign: "center",
+  },
+  content: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  timetable: {
+    paddingLeft: 120,
+    paddingTop: 10,
+    marginTop: 100,
+    marginBottom: 100,
+  },
+});
 
-export default MyTrain
-//Math.floor(new Date('2011-03-29 17:06:21 UTC') / 1000)
+export default MyTrain;
