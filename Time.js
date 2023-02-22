@@ -8,12 +8,13 @@ export const Time = ({ train }) => {
   const utcToEpoch = Math.floor(new Date(train.expectedArrival) / 1000);
   const now = Math.floor(Date.now() / 1000);
   const etaInMinutes = (utcToEpoch - now) / 60;
+
   if (etaInMinutes <= 1) {
     return (
       <Text
         category="s1"
         style={{
-          textAlign: "center",
+          textAlign: "left",
         }}
       >
         due
@@ -25,7 +26,7 @@ export const Time = ({ train }) => {
     <Text
       category="s1"
       style={{
-        textAlign: "center",
+        textAlign: "left",
       }}
     >{`${parseInt(etaInMinutes)} min`}</Text>
   );
