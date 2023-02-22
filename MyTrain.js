@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   View,
   SafeAreaView,
@@ -7,10 +7,12 @@ import {
   StyleSheet,
 } from "react-native";
 import { Time } from "./Time";
-import { RenderExpectedTime } from "./RenderExpectedTime";
 import { useQuery } from "react-query";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Text } from "@ui-kitten/components";
+
+const utcToEpoch = (train) =>
+  Math.floor(new Date(train.expectedArrival) / 1000);
 
 const fetchTrains = async () => {
   const result = await fetch("http://localhost:3000/trains");
@@ -29,19 +31,16 @@ const groupByKey = (list, key, { omitKey = false }) =>
 const cleanUpDestination = (destination) => {
   return destination.replace(/Rail Station/g, "").replace(/ *\([^)]*\) */g, "");
 };
+
 const MyTrain = () => {
   const result = useQuery({ queryKey: ["trains"], queryFn: fetchTrains });
-  const [sortedTrains, setSortedTrains] = useState({});
   if (!result.data) {
     return null;
   }
 
-  const stuff = result.data?.map((train) => train.direction);
-  const bla = [...new Set(stuff)];
-
-  console.log(bla);
   const trains = groupByKey(result.data, "direction", { omitKey: false });
 
+  console.log(trains);
   return (
     <SafeAreaView style={styles.content}>
       <ScrollView
@@ -53,16 +52,23 @@ const MyTrain = () => {
           />
         }
       >
-        <View>
-          {bla.map((direction) => (
-            <View>
-              <Text>{`${direction}`}</Text>
-              <Text>
-                {trains[direction].map((train) => train.destinationName)}
-              </Text>
-              <Text>
-                {trains[direction].map((train) => train.expectedArrival)}
-              </Text>
+        <MaterialCommunityIcons
+          style={{ marginBottom: 170 }}
+          name="timetable"
+          size={75}
+          color="#ff8c00"
+        />
+        <View style={styles.container}>
+          {Object.keys(trains).map((direction) => (
+            <View style={styles.left}>
+              {trains[direction]
+                .sort((a, b) => utcToEpoch(a) - utcToEpoch(b))
+                .map((train) => (
+                  <>
+                    <Text>{cleanUpDestination(train.destinationName)}</Text>
+                    <Time train={train} />
+                  </>
+                ))}
             </View>
           ))}
         </View>
@@ -73,29 +79,16 @@ const MyTrain = () => {
 
 const styles = StyleSheet.create({
   container: {
-    display: "flex",
     flexDirection: "row",
-    paddingBottom: 100,
-    justifyContent: "",
   },
   left: {
     width: 150,
     height: 50,
-    fontSize: 20,
-    textAlign: "center",
+    alignContent: "center",
+    marginLeft: 20,
+    marginBottom: 150,
   },
-  right: {
-    width: 150,
-    height: 50,
-    fontSize: 20,
-    textAlign: "center",
-  },
-  down: {
-    width: 150,
-    height: 50,
-    fontSize: 20,
-    textAlign: "center",
-  },
+
   content: {
     flex: 1,
   },
@@ -103,12 +96,6 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-  },
-  timetable: {
-    paddingLeft: 120,
-    paddingTop: 10,
-    marginTop: 100,
-    marginBottom: 100,
   },
 });
 
